@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.gui.controllers.MainController">
+    <top>
+        <VBox spacing="10.0">
+            <children>
+                <!-- Connection Panel -->
+                <TitledPane collapsible="false" text="Connection">
+                    <content>
+                        <GridPane hgap="10.0" vgap="10.0">
+                            <columnConstraints>
+                                <ColumnConstraints hgrow="NEVER" maxWidth="100.0" minWidth="80.0" prefWidth="80.0" />
+                                <ColumnConstraints hgrow="SOMETIMES" />
+                                <ColumnConstraints hgrow="NEVER" maxWidth="60.0" minWidth="50.0" prefWidth="50.0" />
+                                <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="80.0" prefWidth="80.0" />
+                                <ColumnConstraints hgrow="NEVER" />
+                            </columnConstraints>
+                            <rowConstraints>
+                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                            </rowConstraints>
+                            <children>
+                                <Label text="Host:" />
+                                <TextField fx:id="hostnameField" promptText="localhost" GridPane.columnIndex="1" />
+                                <Label text="Port:" GridPane.columnIndex="2" />
+                                <TextField fx:id="portField" prefWidth="80.0" promptText="21" GridPane.columnIndex="3" />
+                                <HBox alignment="CENTER_LEFT" spacing="10.0" GridPane.columnIndex="4" GridPane.rowSpan="2">
+                                    <children>
+                                        <Button fx:id="connectButton" mnemonicParsing="false" onAction="#handleConnect" text="Connect" />
+                                        <Button fx:id="disconnectButton" mnemonicParsing="false" onAction="#handleDisconnect" text="Disconnect" />
+                                    </children>
+                                </HBox>
+                                <Label text="Username:" GridPane.rowIndex="1" />
+                                <TextField fx:id="usernameField" promptText="username" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                <Label text="Password:" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                                <PasswordField fx:id="passwordField" promptText="password" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                            </children>
+                            <padding>
+                                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                            </padding>
+                        </GridPane>
+                    </content>
+                </TitledPane>
+
+                <!-- Status Panel -->
+                <HBox alignment="CENTER_LEFT" spacing="20.0">
+                    <children>
+                        <Label fx:id="connectionStatusLabel" text="Connected: false" />
+                        <CheckBox fx:id="savePasswordCheck" mnemonicParsing="false" text="Save Password" />
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0" />
+                    </padding>
+                </HBox>
+            </children>
+            <padding>
+                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+            </padding>
+        </VBox>
+    </top>
+    <center>
+        <SplitPane dividerPositions="0.5" orientation="HORIZONTAL">
+            <items>
+                <!-- Remote Files Panel -->
+                <VBox spacing="5.0">
+                    <children>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                            <children>
+                                <Label fx:id="remotePathLabel" text="Remote: Not connected" />
+                                <Button fx:id="refreshRemoteButton" mnemonicParsing="false" onAction="#handleRefreshRemote" text="Refresh" />
+                                <Button fx:id="newFolderRemoteButton" mnemonicParsing="false" onAction="#handleNewFolderRemote" text="New Folder" />
+                                <Button fx:id="deleteRemoteButton" mnemonicParsing="false" onAction="#handleDeleteRemote" text="Delete" />
+                            </children>
+                        </HBox>
+                        <TableView fx:id="remoteFileTable" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="remoteNameColumn" prefWidth="200.0" text="Name" />
+                                <TableColumn fx:id="remoteSizeColumn" prefWidth="80.0" text="Size" />
+                                <TableColumn fx:id="remoteDateColumn" prefWidth="140.0" text="Modified" />
+                                <TableColumn fx:id="remotePermissionsColumn" prefWidth="100.0" text="Permissions" />
+                            </columns>
+                        </TableView>
+                    </children>
+                    <padding>
+                        <Insets bottom="10.0" left="10.0" right="5.0" top="10.0" />
+                    </padding>
+                </VBox>
+
+                <!-- Local Files Panel -->
+                <VBox spacing="5.0">
+                    <children>
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                            <children>
+                                <Label fx:id="localPathLabel" text="Local: " />
+                                <Button fx:id="refreshLocalButton" mnemonicParsing="false" onAction="#handleRefreshLocal" text="Refresh" />
+                                <Button fx:id="newFolderLocalButton" mnemonicParsing="false" onAction="#handleNewFolderLocal" text="New Folder" />
+                                <Button fx:id="deleteLocalButton" mnemonicParsing="false" onAction="#handleDeleteLocal" text="Delete" />
+                            </children>
+                        </HBox>
+                        <TableView fx:id="localFileTable" VBox.vgrow="ALWAYS">
+                            <columns>
+                                <TableColumn fx:id="localNameColumn" prefWidth="200.0" text="Name" />
+                                <TableColumn fx:id="localSizeColumn" prefWidth="80.0" text="Size" />
+                                <TableColumn fx:id="localDateColumn" prefWidth="140.0" text="Modified" />
+                            </columns>
+                        </TableView>
+                    </children>
+                    <padding>
+                        <Insets bottom="10.0" left="5.0" right="10.0" top="10.0" />
+                    </padding>
+                </VBox>
+            </items>
+        </SplitPane>
+    </center>
+    <bottom>
+        <VBox spacing="5.0">
+            <children>
+                <!-- Transfer Buttons -->
+                <HBox alignment="CENTER" spacing="20.0">
+                    <children>
+                        <Button fx:id="uploadButton" mnemonicParsing="false" onAction="#handleUpload" prefWidth="100.0" text="Upload →" />
+                        <Button fx:id="downloadButton" mnemonicParsing="false" onAction="#handleDownload" prefWidth="100.0" text="← Download" />
+                    </children>
+                </HBox>
+
+                <!-- Transfer Progress -->
+                <VBox fx:id="transferProgressContainer" spacing="5.0" visible="false">
+                    <children>
+                        <Label fx:id="transferStatusLabel" text="Transfer status" />
+                        <ProgressBar fx:id="transferProgressBar" maxWidth="1.7976931348623157E308" progress="0.0" />
+                    </children>
+                    <padding>
+                        <Insets left="10.0" right="10.0" />
+                    </padding>
+                </VBox>
+
+                <!-- Log Panel -->
+                <TitledPane collapsible="false" text="Log">
+                    <content>
+                        <VBox spacing="5.0">
+                            <children>
+                                <HBox alignment="CENTER_RIGHT">
+                                    <children>
+                                        <Button mnemonicParsing="false" onAction="#handleClearLog" text="Clear Log" />
+                                    </children>
+                                </HBox>
+                                <TextArea fx:id="logTextArea" editable="false" prefHeight="150.0" wrapText="true" />
+                            </children>
+                            <padding>
+                                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                            </padding>
+                        </VBox>
+                    </content>
+                </TitledPane>
+            </children>
+            <padding>
+                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+            </padding>
+        </VBox>
+    </bottom>
+</BorderPane>

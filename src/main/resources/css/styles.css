@@ -1,0 +1,271 @@
+/* Main Application Styles */
+.root {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-size: 12px;
+    -fx-background-color: #f4f4f4;
+}
+
+/* Connection Panel */
+.titled-pane {
+    -fx-text-fill: #333333;
+    -fx-font-weight: bold;
+}
+
+.titled-pane > .title {
+    -fx-background-color: #e8e8e8;
+    -fx-padding: 5px 10px;
+}
+
+.titled-pane > *.content {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1px;
+}
+
+/* Buttons */
+.button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4px;
+    -fx-padding: 8px 16px;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #45a049;
+}
+
+.button:pressed {
+    -fx-background-color: #3d8b40;
+}
+
+.button:disabled {
+    -fx-background-color: #cccccc;
+    -fx-text-fill: #666666;
+    -fx-cursor: default;
+}
+
+/* Connect/Disconnect buttons */
+#connectButton {
+    -fx-background-color: #2196F3;
+}
+
+#connectButton:hover {
+    -fx-background-color: #1976D2;
+}
+
+#disconnectButton {
+    -fx-background-color: #f44336;
+}
+
+#disconnectButton:hover {
+    -fx-background-color: #d32f2f;
+}
+
+/* Transfer buttons */
+#uploadButton, #downloadButton {
+    -fx-background-color: #FF9800;
+    -fx-font-size: 14px;
+    -fx-padding: 10px 20px;
+}
+
+#uploadButton:hover, #downloadButton:hover {
+    -fx-background-color: #F57C00;
+}
+
+/* Input Fields */
+.text-field, .password-field {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+    -fx-padding: 6px 10px;
+}
+
+.text-field:focused, .password-field:focused {
+    -fx-border-color: #4CAF50;
+    -fx-border-width: 2px;
+}
+
+/* Table Views */
+.table-view {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1px;
+    -fx-table-cell-border-color: #e0e0e0;
+}
+
+.table-view .column-header {
+    -fx-background-color: #f5f5f5;
+    -fx-text-fill: #333333;
+    -fx-font-weight: bold;
+    -fx-padding: 8px;
+    -fx-border-color: #cccccc;
+}
+
+.table-view .column-header:hover {
+    -fx-background-color: #eeeeee;
+}
+
+.table-row-cell {
+    -fx-background-color: white;
+    -fx-padding: 4px;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #f9f9f9;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+}
+
+.table-row-cell:hover {
+    -fx-background-color: #e8f5e8;
+}
+
+.table-row-cell:selected:hover {
+    -fx-background-color: #45a049;
+}
+
+/* Split Pane */
+.split-pane {
+    -fx-background-color: #f4f4f4;
+}
+
+.split-pane-divider {
+    -fx-background-color: #cccccc;
+    -fx-padding: 0 2px 0 2px;
+}
+
+/* Labels */
+.label {
+    -fx-text-fill: #333333;
+}
+
+#connectionStatusLabel {
+    -fx-font-weight: bold;
+    -fx-text-fill: #666666;
+}
+
+#remotePathLabel, #localPathLabel {
+    -fx-font-weight: bold;
+    -fx-text-fill: #2196F3;
+    -fx-font-size: 13px;
+}
+
+/* Progress Bar */
+.progress-bar {
+    -fx-background-color: #e0e0e0;
+    -fx-background-radius: 4px;
+    -fx-padding: 4px;
+}
+
+.progress-bar .bar {
+    -fx-background-color: #4CAF50;
+    -fx-background-radius: 3px;
+    -fx-background-insets: 1px;
+}
+
+/* Text Area (Log) */
+.text-area {
+    -fx-background-color: #2b2b2b;
+    -fx-text-fill: #ffffff;
+    -fx-font-family: "Consolas", "Monaco", monospace;
+    -fx-font-size: 11px;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1px;
+}
+
+.text-area .content {
+    -fx-background-color: #2b2b2b;
+}
+
+.text-area .scroll-pane {
+    -fx-background-color: #2b2b2b;
+}
+
+.text-area .scroll-pane .viewport {
+    -fx-background-color: #2b2b2b;
+}
+
+/* CheckBox */
+.check-box {
+    -fx-text-fill: #333333;
+}
+
+.check-box .box {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1px;
+    -fx-border-radius: 3px;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: #4CAF50;
+}
+
+/* Scroll Bars */
+.scroll-bar {
+    -fx-background-color: #f0f0f0;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #cccccc;
+    -fx-background-radius: 4px;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #999999;
+}
+
+.scroll-bar .track {
+    -fx-background-color: #f0f0f0;
+}
+
+/* Tooltips */
+.tooltip {
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-background-radius: 4px;
+    -fx-padding: 4px 8px;
+}
+
+/* File type specific styles */
+.file-item-directory {
+    -fx-font-weight: bold;
+    -fx-text-fill: #2196F3;
+}
+
+.file-item-parent {
+    -fx-font-style: italic;
+    -fx-text-fill: #666666;
+}
+
+/* Animation styles */
+.transfer-progress-container {
+    -fx-background-color: #fff3cd;
+    -fx-border-color: #ffeaa7;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-padding: 10px;
+}
+
+/* Status indicators */
+.status-connected {
+    -fx-text-fill: #4CAF50;
+    -fx-font-weight: bold;
+}
+
+.status-disconnected {
+    -fx-text-fill: #f44336;
+    -fx-font-weight: bold;
+}
+
+.status-error {
+    -fx-text-fill: #ff5722;
+    -fx-font-weight: bold;
+}

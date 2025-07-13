@@ -3,6 +3,7 @@ import server.FTPServer;
 import server.UserManager;
 import client.CommandLineClient;
 import client.BatchClient;
+import client.gui.FTPClientGUI;
 
 /**
  * Main entry point for the FTP application
@@ -13,7 +14,7 @@ import client.BatchClient;
 public class Main {
     public static void main(String[] args) {
         System.out.println("FTP Client-Server Application");
-        System.out.println("Phase 4: Command-Line FTP Client Implementation");
+        System.out.println("Phase 6: GUI Client Implementation");
         System.out.println();
 
         if (args.length == 0) {
@@ -29,6 +30,9 @@ public class Main {
                 break;
             case "client":
                 startClient(args);
+                break;
+            case "gui":
+                startGUIClient(args);
                 break;
             case "batch":
                 startBatchClient(args);
@@ -47,13 +51,15 @@ public class Main {
         System.out.println();
         System.out.println("Modes:");
         System.out.println("  server                 - Start FTP server");
-        System.out.println("  client [host] [port]   - Start interactive FTP client");
+        System.out.println("  client [host] [port]   - Start command-line FTP client");
+        System.out.println("  gui                    - Start GUI FTP client");
         System.out.println("  batch <script>         - Execute FTP script");
         System.out.println("  config                 - Show configuration");
         System.out.println();
         System.out.println("Examples:");
         System.out.println("  java Main server");
         System.out.println("  java Main client");
+        System.out.println("  java Main gui");
         System.out.println("  java Main client localhost 21");
         System.out.println("  java Main batch test-script.ftp");
     }
@@ -64,7 +70,7 @@ public class Main {
     }
 
     private static void startClient(String[] args) {
-        System.out.println("Starting FTP Client...");
+        System.out.println("Starting Command-Line FTP Client...");
 
         if (args.length >= 3) {
             // Auto-connect mode
@@ -76,6 +82,18 @@ public class Main {
             // Interactive mode
             CommandLineClient.main(new String[0]);
         }
+    }
+
+    private static void startGUIClient(String[] args) {
+        System.out.println("Starting GUI FTP Client...");
+
+        // Pass remaining arguments to GUI application
+        String[] guiArgs = new String[args.length - 1];
+        if (args.length > 1) {
+            System.arraycopy(args, 1, guiArgs, 0, args.length - 1);
+        }
+
+        FTPClientGUI.main(guiArgs);
     }
 
     private static void startBatchClient(String[] args) {
