@@ -33,6 +33,14 @@ public class ClientSession {
     // Transfer state
     private String renameFromPath; // For RNFR/RNTO commands
 
+    // Additional session state
+    private boolean utf8Enabled;
+    private String transferType;
+    private String transferMode;
+    private boolean passiveMode;
+    private long restartPosition;
+    private java.time.LocalDateTime lastActivity;
+
     /**
      * Constructor
      * @param clientSocket Client socket
@@ -43,6 +51,12 @@ public class ClientSession {
         this.config = config;
         this.connectionTime = LocalDateTime.now();
         this.authenticated = false;
+        this.utf8Enabled = false;
+        this.transferType = "I"; // Binary by default
+        this.transferMode = "S"; // Stream by default
+        this.passiveMode = false;
+        this.restartPosition = 0;
+        this.lastActivity = LocalDateTime.now();
 
         // Initialize directory paths
         initializeDirectories();
@@ -273,5 +287,146 @@ public class ClientSession {
         this.renameFromPath = null;
         // Reset to root directory
         this.currentDirectory = rootDirectory;
+    }
+
+    /**
+     * Update last activity time
+     */
+    public void updateActivity() {
+        this.lastActivity = LocalDateTime.now();
+    }
+
+    /**
+     * Get last activity time
+     * @return Last activity time
+     */
+    public LocalDateTime getLastActivity() {
+        return lastActivity;
+    }
+
+    /**
+     * Check if session has been idle for too long
+     * @param timeoutMinutes Timeout in minutes
+     * @return true if session is idle
+     */
+    public boolean isIdle(int timeoutMinutes) {
+        return lastActivity.plusMinutes(timeoutMinutes).isBefore(LocalDateTime.now());
+    }
+
+    /**
+     * Set UTF-8 encoding enabled
+     * @param enabled UTF-8 enabled flag
+     */
+    public void setUtf8Enabled(boolean enabled) {
+        this.utf8Enabled = enabled;
+    }
+
+    /**
+     * Check if UTF-8 encoding is enabled
+     * @return true if UTF-8 is enabled
+     */
+    public boolean isUtf8Enabled() {
+        return utf8Enabled;
+    }
+
+    /**
+     * Set transfer type
+     * @param type Transfer type (A for ASCII, I for binary)
+     */
+    public void setTransferType(String type) {
+        this.transferType = type.toUpperCase();
+    }
+
+    /**
+     * Get transfer type
+     * @return Transfer type
+     */
+    public String getTransferType() {
+        return transferType;
+    }
+
+    /**
+     * Set transfer mode
+     * @param mode Transfer mode (S for stream, B for block, C for compressed)
+     */
+    public void setTransferMode(String mode) {
+        this.transferMode = mode.toUpperCase();
+    }
+
+    /**
+     * Get transfer mode
+     * @return Transfer mode
+     */
+    public String getTransferMode() {
+        return transferMode;
+    }
+
+    /**
+     * Set passive mode
+     * @param passive Passive mode flag
+     */
+    public void setPassiveMode(boolean passive) {
+        this.passiveMode = passive;
+    }
+
+    /**
+     * Check if in passive mode
+     * @return true if in passive mode
+     */
+    public boolean isPassiveMode() {
+        return passiveMode;
+    }
+
+    /**
+     * Set restart position for resuming transfers
+     * @param position Position to restart from
+     */
+    public void setRestartPosition(long position) {
+        this.restartPosition = position;
+    }
+
+    /**
+     * Get restart position
+     * @return Restart position
+     */
+    public long getRestartPosition() {
+        return restartPosition;
+    }
+
+    /**
+     * Clear restart position
+     */
+    public void clearRestartPosition() {
+        this.restartPosition = 0;
+    }
+
+    /**
+     * Get detailed session information
+     * @return Detailed session information
+     */
+    public String getDetailedSessionInfo() {
+        return String.format(
+                "Session Details:\n" +
+                        "  User: %s\n" +
+                        "  Connected: %s\n" +
+                        "  Last Activity: %s\n" +
+                        "  Directory: %s\n" +
+                        "  Authenticated: %s\n" +
+                        "  UTF-8: %s\n" +
+                        "  Transfer Type: %s\n" +
+                        "  Transfer Mode: %s\n" +
+                        "  Passive Mode: %s\n" +
+                        "  Restart Position: %d",
+                username != null ? username : "Anonymous",
+                connectionTime,
+                lastActivity,
+                getCurrentDirectoryPath(),
+                authenticated,
+                utf8Enabled,
+                transferType,
+                transferMode,
+                passiveMode,
+                restartPosition
+        );
     }
 }

@@ -36,13 +36,34 @@ public enum FTPCommand {
     QUIT("QUIT", "Terminate connection gracefully"),
     NOOP("NOOP", "No operation (keep-alive)"),
 
-    // Data Connection Commands
+    // Advanced Directory Commands
+    MLST("MLST", "Machine readable file listing"),
+    MLSD("MLSD", "Machine readable directory listing"),
+
+    // Feature and Options Commands
+    FEAT("FEAT", "List server features"),
+    OPTS("OPTS", "Set options"),
+
+    // Status Commands
+    STAT("STAT", "Status information"),
+
+    // Transfer Mode Commands
+    TYPE("TYPE", "Set transfer type"),
+    MODE("MODE", "Set transfer mode"),
+
+    // Connection Mode Commands
     PASV("PASV", "Enter passive mode"),
     PORT("PORT", "Specify client data port"),
 
+    // Advanced File Commands
+    REST("REST", "Restart file transfer"),
+    ABOR("ABOR", "Abort transfer"),
+
+    // Help Commands
+    HELP("HELP", "Help information"),
+
     // System Commands
     SYST("SYST", "System type"),
-    FEAT("FEAT", "List server features"),
 
     // Unknown command for error handling
     UNKNOWN("UNKNOWN", "Unknown or unsupported command");

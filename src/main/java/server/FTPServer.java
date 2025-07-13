@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -31,6 +32,8 @@ public class FTPServer {
     private final AtomicInteger activeConnections;
     private final int port;
     private final int maxConnections;
+    private final SecurityManager securityManager;
+    private final PerformanceMonitor performanceMonitor;
 
     /**
      * Constructor with default configuration
@@ -49,6 +52,8 @@ public class FTPServer {
         this.maxConnections = config.getMaxConnections();
         this.isRunning = new AtomicBoolean(false);
         this.activeConnections = new AtomicInteger(0);
+        this.securityManager = SecurityManager.getInstance();
+        this.performanceMonitor = PerformanceMonitor.getInstance();
 
         logger.info("FTP Server initialized on port {}", port);
     }
@@ -88,11 +93,25 @@ public class FTPServer {
             try {
                 // Accept client connection
                 Socket clientSocket = serverSocket.accept();
+                InetAddress clientAddress = clientSocket.getInetAddress();
+
+                // Security checks
+                if (!securityManager.isConnectionAllowed(clientAddress)) {
+                    logger.warn("Connection rejected for security reasons: {}", clientAddress);
+                    rejectConnection(clientSocket);
+                    continue;
+                }
+
+                // Check rate limiting
+                if (securityManager.isRateLimitExceeded(clientAddress)) {
+                    logger.warn("Connection rejected due to rate limiting: {}", clientAddress);
+                    rejectConnection(clientSocket);
+                    continue;
+                }
 
                 // Check connection limit
                 if (activeConnections.get() >= maxConnections) {
-                    logger.warn("Maximum connections reached, rejecting client: {}",
-                            clientSocket.getRemoteSocketAddress());
+                    logger.warn("Maximum connections reached, rejecting client: {}", clientAddress);
                     rejectConnection(clientSocket);
                     continue;
                 }
@@ -101,22 +120,28 @@ public class FTPServer {
                 NetworkUtils.configureSocket(clientSocket, config.getBufferSize());
                 clientSocket.setSoTimeout(config.getTimeout());
 
+                // Register with security manager and performance monitor
+                securityManager.registerConnection(clientAddress);
+                performanceMonitor.recordConnection();
+
                 // Create and submit client handler
                 ClientHandler clientHandler = new ClientHandler(clientSocket, this);
                 clientThreadPool.submit(clientHandler);
 
                 int connectionCount = activeConnections.incrementAndGet();
                 logger.info("New client connected from {}, active connections: {}",
-                        clientSocket.getRemoteSocketAddress(), connectionCount);
+                        clientAddress, connectionCount);
 
             } catch (SocketException e) {
                 if (isRunning.get()) {
                     logger.error("Socket error while accepting connections", e);
+                    performanceMonitor.recordError();
                 }
                 // If server is stopping, this is expected
             } catch (IOException e) {
                 if (isRunning.get()) {
                     logger.error("Error accepting client connection", e);
+                    performanceMonitor.recordError();
                 }
             }
         }
@@ -169,10 +194,13 @@ public class FTPServer {
 
     /**
      * Called when a client disconnects
+     * @param clientAddress Client IP address
      */
-    public void onClientDisconnected() {
+    public void onClientDisconnected(InetAddress clientAddress) {
         int connectionCount = activeConnections.decrementAndGet();
-        logger.info("Client disconnected, active connections: {}", connectionCount);
+        securityManager.unregisterConnection(clientAddress);
+        performanceMonitor.recordDisconnection();
+        logger.info("Client disconnected from {}, active connections: {}", clientAddress, connectionCount);
     }
 
     /**
@@ -217,6 +245,41 @@ public class FTPServer {
     }
 
     /**
+     * Get security manager
+     * @return Security manager instance
+     */
+    public SecurityManager getSecurityManager() {
+        return securityManager;
+    }
+
+    /**
+     * Get performance monitor
+     * @return Performance monitor instance
+     */
+    public PerformanceMonitor getPerformanceMonitor() {
+        return performanceMonitor;
+    }
+
+    /**
+     * Get server statistics
+     * @return Server statistics string
+     */
+    public String getServerStatistics() {
+        StringBuilder stats = new StringBuilder();
+        stats.append("=== FTP Server Statistics ===\n");
+        stats.append("Server Status: ").append(isRunning.get() ? "RUNNING" : "STOPPED").append("\n");
+        stats.append("Port: ").append(port).append("\n");
+        stats.append("Max Connections: ").append(maxConnections).append("\n");
+        stats.append("Active Connections: ").append(activeConnections.get()).append("\n");
+        stats.append("\n");
+
+        stats.append(performanceMonitor.getPerformanceStats()).append("\n\n");
+        stats.append(securityManager.getSecurityStats());
+
+        return stats.toString();
+    }
+
+    /**
      * Main method to run the server
      * @param args Command line arguments
      */
@@ -231,6 +294,14 @@ public class FTPServer {
 
         try {
             server.start();
+
+            // Start admin interface in parallel
+            if (args.length == 0 || !"--no-admin".equals(args[0])) {
+                System.out.println("\nStarting administrative interface...");
+                System.out.println("Type 'help' for admin commands or 'quit' to exit admin mode");
+                AdminInterface.startAdminInterface(server);
+            }
+
         } catch (IOException e) {
             logger.error("Failed to start FTP server", e);
             System.err.println("Failed to start FTP server: " + e.getMessage());

@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 
@@ -132,15 +133,29 @@ public class ClientHandler implements Runnable {
      */
     private void processCommand(FTPMessage message) {
         try {
+            // Record command for performance monitoring
+            server.getPerformanceMonitor().recordCommand();
+
+            // Update session activity
+            session.updateActivity();
+
+            // Check rate limiting
+            if (server.getSecurityManager().isRateLimitExceeded(clientSocket.getInetAddress())) {
+                sendResponse(FTPResponse.SERVICE_NOT_AVAILABLE, "Rate limit exceeded");
+                return;
+            }
+
             // Validate message
             if (!message.isValid()) {
                 sendResponse(FTPResponse.SYNTAX_ERROR_COMMAND, "Invalid command format");
+                server.getPerformanceMonitor().recordError();
                 return;
             }
 
             // Check authentication requirements
             if (message.getCommand().requiresAuthentication() && !session.isAuthenticated()) {
                 sendResponse(FTPResponse.NOT_LOGGED_IN, "Please login first");
+                server.getPerformanceMonitor().recordError();
                 return;
             }
 
@@ -151,15 +166,22 @@ public class ClientHandler implements Runnable {
             logger.warn("Authentication error for client {}: {}",
                     clientSocket.getRemoteSocketAddress(), e.getMessage());
             sendResponse(e.getResponseCode(), e.getMessage());
+            server.getPerformanceMonitor().recordError();
+
+            // Record failed login for security monitoring
+            server.getSecurityManager().recordFailedLogin(clientSocket.getInetAddress());
+
         } catch (FTPException e) {
             logger.warn("FTP error for client {}: {}",
                     clientSocket.getRemoteSocketAddress(), e.getMessage());
             sendResponse(e.getResponseCode() != null ? e.getResponseCode() : FTPResponse.ACTION_ABORTED,
                     e.getMessage());
+            server.getPerformanceMonitor().recordError();
         } catch (Exception e) {
             logger.error("Unexpected error processing command for client {}",
                     clientSocket.getRemoteSocketAddress(), e);
             sendResponse(FTPResponse.ACTION_ABORTED, "Internal server error");
+            server.getPerformanceMonitor().recordError();
         }
     }
 
@@ -230,13 +252,15 @@ public class ClientHandler implements Runnable {
                     clientSocket.getRemoteSocketAddress(), e);
         }
 
+        // Get client address before closing socket
+        InetAddress clientAddress = clientSocket.getInetAddress();
+
         // Close socket
         NetworkUtils.closeSocket(clientSocket);
 
-        // Notify server of disconnection
-        server.onClientDisconnected();
+        // Notify server of disconnection with client address
+        server.onClientDisconnected(clientAddress);
 
-        logger.info("Client handler cleanup completed for {}",
-                clientSocket.getRemoteSocketAddress());
+        logger.info("Client handler cleanup completed for {}", clientAddress);
     }
 }

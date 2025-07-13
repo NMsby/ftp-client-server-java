@@ -98,6 +98,21 @@ public class CommandProcessor {
             case QUIT:
                 handleQuit(clientHandler);
                 break;
+            case FEAT:
+                handleFeat(clientHandler);
+                break;
+            case MLST:
+                handleMlst(message, clientHandler);
+                break;
+            case MLSD:
+                handleMlsd(message, clientHandler);
+                break;
+            case OPTS:
+                handleOpts(message, clientHandler);
+                break;
+            case STAT:
+                handleStat(message, clientHandler);
+                break;
             default:
                 clientHandler.sendResponse(FTPResponse.COMMAND_NOT_IMPLEMENTED,
                         "Command " + command + " not implemented");
@@ -591,5 +606,215 @@ public class CommandProcessor {
 
         clientHandler.sendResponse(FTPResponse.SERVICE_CLOSING, "Goodbye");
         session.logout();
+    }
+
+    /**
+     * Handle FEAT command (Feature negotiation)
+     */
+    private void handleFeat(ClientHandler clientHandler) {
+        // Send multi-line response for supported features
+        try {
+            clientHandler.getClientSocket().getOutputStream().write("211-Features:\r\n".getBytes());
+            clientHandler.getClientSocket().getOutputStream().write(" SIZE\r\n".getBytes());
+            clientHandler.getClientSocket().getOutputStream().write(" MDTM\r\n".getBytes());
+            clientHandler.getClientSocket().getOutputStream().write(" REST STREAM\r\n".getBytes());
+            clientHandler.getClientSocket().getOutputStream().write(" MLST type*;size*;modify*;\r\n".getBytes());
+            clientHandler.getClientSocket().getOutputStream().write(" MLSD\r\n".getBytes());
+            clientHandler.getClientSocket().getOutputStream().write(" AUTH TLS\r\n".getBytes());
+            clientHandler.getClientSocket().getOutputStream().write(" PBSZ\r\n".getBytes());
+            clientHandler.getClientSocket().getOutputStream().write(" PROT\r\n".getBytes());
+            clientHandler.getClientSocket().getOutputStream().write(" UTF8\r\n".getBytes());
+            clientHandler.getClientSocket().getOutputStream().write("211 End\r\n".getBytes());
+            clientHandler.getClientSocket().getOutputStream().flush();
+        } catch (IOException e) {
+            clientHandler.sendResponse(FTPResponse.ACTION_ABORTED, "Error sending feature list");
+        }
+    }
+
+    /**
+     * Handle MLST command (Machine-readable file listing)
+     */
+    private void handleMlst(FTPMessage message, ClientHandler clientHandler) throws FTPException {
+        String filename = message.getFirstParameter();
+
+        try {
+            Path filePath;
+            if (filename != null && !filename.trim().isEmpty()) {
+                filePath = session.resolveFilePath(filename);
+            } else {
+                filePath = session.getCurrentDirectory();
+            }
+
+            if (!Files.exists(filePath)) {
+                throw new FTPException(FTPResponse.FILE_UNAVAILABLE, "File not found");
+            }
+
+            FileInfo fileInfo = FileUtils.getFileInfo(filePath);
+            if (fileInfo != null) {
+                String mlstLine = generateMLSTLine(fileInfo);
+                clientHandler.sendResponse(FTPResponse.FILE_STATUS, mlstLine);
+            } else {
+                throw new FTPException(FTPResponse.FILE_UNAVAILABLE, "Cannot access file information");
+            }
+
+        } catch (IOException e) {
+            throw new FTPException(FTPResponse.ACTION_ABORTED, "Error processing MLST: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handle MLSD command (Machine-readable directory listing)
+     */
+    private void handleMlsd(FTPMessage message, ClientHandler clientHandler) throws FTPException {
+        try {
+            Path listPath = session.getCurrentDirectory();
+
+            if (message.hasParameters()) {
+                String path = message.getFirstParameter();
+                listPath = session.resolveFilePath(path);
+            }
+
+            if (!Files.exists(listPath)) {
+                throw new FTPException(FTPResponse.FILE_UNAVAILABLE, "Path not found");
+            }
+
+            if (!Files.isDirectory(listPath)) {
+                throw new FTPException(FTPResponse.FILE_UNAVAILABLE, "Not a directory");
+            }
+
+            sendMLSDData(listPath, clientHandler);
+
+        } catch (IOException e) {
+            throw new FTPException(FTPResponse.ACTION_ABORTED, "Error listing directory: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generate MLST format line for a file
+     */
+    private String generateMLSTLine(FileInfo fileInfo) {
+        StringBuilder sb = new StringBuilder();
+
+        // Type fact
+        sb.append("type=").append(fileInfo.isDirectory() ? "dir" : "file").append(";");
+
+        // Size fact (only for files)
+        if (!fileInfo.isDirectory()) {
+            sb.append("size=").append(fileInfo.getSize()).append(";");
+        }
+
+        // Modify fact
+        sb.append("modify=").append(fileInfo.getLastModified()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))).append(";");
+
+        // Permissions
+        sb.append("perm=");
+        if (fileInfo.isDirectory()) {
+            sb.append(fileInfo.isWritable() ? "flcdmp" : "flr");
+        } else {
+            sb.append(fileInfo.isWritable() ? "adfr" : "r");
+        }
+        sb.append(";");
+
+        // Add filename
+        sb.append(" ").append(fileInfo.getName());
+
+        return sb.toString();
+    }
+
+    /**
+     * Send MLSD data via control connection
+     */
+    private void sendMLSDData(Path path, ClientHandler clientHandler) throws IOException, FTPException {
+        clientHandler.sendResponse(FTPResponse.FILE_ACTION_OK, "Here comes the directory listing");
+
+        List<FileInfo> files = FileUtils.listDirectory(path);
+
+        try (OutputStream output = clientHandler.getClientSocket().getOutputStream()) {
+            for (FileInfo file : files) {
+                String mlsdLine = generateMLSTLine(file) + "\r\n";
+                output.write(mlsdLine.getBytes());
+            }
+            output.flush();
+        }
+
+        clientHandler.sendResponse(FTPResponse.CLOSING_DATA_CONNECTION, "Directory send OK");
+    }
+
+    /**
+     * Handle OPTS command (Options)
+     */
+    private void handleOpts(FTPMessage message, ClientHandler clientHandler) throws FTPException {
+        if (!message.hasParameters()) {
+            throw new FTPException(FTPResponse.SYNTAX_ERROR_PARAMETERS, "OPTS requires parameters");
+        }
+
+        String option = message.getFirstParameter().toUpperCase();
+
+        switch (option) {
+            case "UTF8":
+                String value = message.getParameterCount() > 1 ? message.getParameter(1).toUpperCase() : "ON";
+                if ("ON".equals(value)) {
+                    session.setUtf8Enabled(true);
+                    clientHandler.sendResponse(FTPResponse.COMMAND_OK, "UTF8 set to on");
+                } else if ("OFF".equals(value)) {
+                    session.setUtf8Enabled(false);
+                    clientHandler.sendResponse(FTPResponse.COMMAND_OK, "UTF8 set to off");
+                } else {
+                    throw new FTPException(FTPResponse.SYNTAX_ERROR_PARAMETERS, "Invalid UTF8 option");
+                }
+                break;
+            default:
+                throw new FTPException(FTPResponse.PARAMETER_NOT_IMPLEMENTED, "Option not supported: " + option);
+        }
+    }
+
+    /**
+     * Handle STAT command (Status)
+     */
+    private void handleStat(FTPMessage message, ClientHandler clientHandler) throws FTPException {
+        try {
+            if (message.hasParameters()) {
+                // STAT with path - show file/directory info
+                String path = message.getFirstParameter();
+                Path filePath = session.resolveFilePath(path);
+
+                if (!Files.exists(filePath)) {
+                    throw new FTPException(FTPResponse.FILE_UNAVAILABLE, "File not found");
+                }
+
+                FileInfo fileInfo = FileUtils.getFileInfo(filePath);
+                if (fileInfo != null) {
+                    clientHandler.sendResponse(FTPResponse.FILE_STATUS, fileInfo.toListFormat());
+                } else {
+                    throw new FTPException(FTPResponse.FILE_UNAVAILABLE, "Cannot access file information");
+                }
+            } else {
+                // STAT without parameters - show server status
+                sendServerStatus(clientHandler);
+            }
+        } catch (IOException e) {
+            throw new FTPException(FTPResponse.ACTION_ABORTED, "Error getting status: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Send server status information
+     */
+    private void sendServerStatus(ClientHandler clientHandler) throws IOException {
+        StringBuilder status = new StringBuilder();
+        status.append("FTP Server Status:\r\n");
+        status.append("Connected from: ").append(session.getClientSocket().getRemoteSocketAddress()).append("\r\n");
+        status.append("Logged in as: ").append(session.getUsername() != null ? session.getUsername() : "Not logged in").append("\r\n");
+        status.append("Current directory: ").append(session.getCurrentDirectoryPath()).append("\r\n");
+        status.append("Server version: FTP Server 1.0\r\n");
+        status.append("Connection time: ").append(session.getConnectionTime()).append("\r\n");
+
+        try (OutputStream output = clientHandler.getClientSocket().getOutputStream()) {
+            output.write(("211-Status of " + session.getClientSocket().getLocalSocketAddress() + ":\r\n").getBytes());
+            output.write(status.toString().getBytes());
+            output.write("211 End of status\r\n".getBytes());
+            output.flush();
+        }
     }
 }
