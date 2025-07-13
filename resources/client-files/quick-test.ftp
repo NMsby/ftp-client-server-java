@@ -1,0 +1,6 @@
+# Quick connection test
+connect localhost 21
+login test test
+pwd
+list
+quit

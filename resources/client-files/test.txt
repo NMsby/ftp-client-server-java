@@ -1,0 +1,5 @@
+This is a test file for FTP operations.
+It contains multiple lines of text to test file transfers.
+Line 3
+Line 4
+End of file.

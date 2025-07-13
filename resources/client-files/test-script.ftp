@@ -1,0 +1,47 @@
+# FTP Test Script
+# Lines starting with # are comments
+
+# Connect to server
+connect localhost 21
+
+# Login with credentials
+login admin admin123
+
+# Navigate and list directories
+pwd
+list
+cd public
+list
+
+# Create a test directory
+mkdir test-batch
+
+# Change to test directory
+cd test-batch
+
+# Upload a file (you'll need to create test.txt locally)
+put test.txt
+
+# List to verify upload
+list
+
+# Download the file with different name
+get test.txt downloaded-test.txt
+
+# Rename the file
+rename test.txt renamed-test.txt
+
+# List again
+list
+
+# Go back to parent directory
+cd ..
+
+# Remove the test directory (first delete files)
+cd test-batch
+delete renamed-test.txt
+cd ..
+rmdir test-batch
+
+# Disconnect
+quit
